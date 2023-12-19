@@ -1,7 +1,7 @@
 # S3 static website bucket
 
 resource "aws_s3_bucket" "bootcamp_bucket" {
-  bucket = "terraform-bootcamp-jokerwrld"
+  bucket = "${var.root_domain_name}"
 }
 
 resource "aws_s3_bucket_website_configuration" "bootcamp_bucket_website" {
@@ -60,19 +60,28 @@ resource "aws_cloudfront_origin_access_identity" "origin_access_identity" {
 resource "aws_cloudfront_distribution" "cloudfront_distribution" {
 
   origin {
+    # custom_origin_config {
+    #   // These are all the defaults.
+    #   http_port              = "80"
+    #   https_port             = "443"
+    #   origin_protocol_policy = "http-only"
+    #   origin_ssl_protocols   = ["TLSv1", "TLSv1.1", "TLSv1.2"]
+    # }
+
     domain_name = aws_s3_bucket.bootcamp_bucket.bucket_regional_domain_name
-    origin_id   = aws_s3_bucket.bootcamp_bucket.id
+    origin_id   = "${var.sub_domain_name}"
 
     origin_access_control_id = aws_cloudfront_origin_access_control.cloudfront_s3_oac.id
   }
 
+  aliases = ["${var.sub_domain_name}"]
   enabled = true
   default_root_object = "index.html"
 
   default_cache_behavior {
     allowed_methods  = ["GET", "HEAD"]
     cached_methods   = ["GET", "HEAD"]
-    target_origin_id = aws_s3_bucket.bootcamp_bucket.id
+    target_origin_id = "${var.sub_domain_name}"
 
     forwarded_values {
       query_string = false
@@ -89,7 +98,8 @@ resource "aws_cloudfront_distribution" "cloudfront_distribution" {
   }
 
   viewer_certificate {
-    cloudfront_default_certificate = true
+    acm_certificate_arn = "${aws_acm_certificate.certificate.arn}"
+    ssl_support_method = "sni-only"
   }
 
   restrictions {
@@ -142,4 +152,34 @@ resource "aws_s3_bucket_policy" "bootcamp_bucket_policy" {
     ]
 }
 POLICY
+}
+
+// Use the AWS Certificate Manager to create an SSL cert for our domain.
+// This resource won't be created until you receive the email verifying you
+// own the domain and you click on the confirmation link.
+resource "aws_acm_certificate" "certificate" {
+  // We want a wildcard cert so we can host subdomains later.
+  domain_name       = "*.${var.root_domain_name}"
+  validation_method = "DNS"
+
+  // We also want the cert to be valid for the root domain even though we'll be
+  // redirecting to the www. domain immediately.
+  subject_alternative_names = ["${var.root_domain_name}"]
+}
+
+
+resource "cloudflare_record" "foo" {
+  zone_id = var.cloudflare_zone_id
+  name    = "barista"
+  value   = aws_cloudfront_distribution.cloudfront_distribution.domain_name
+  type    = "CNAME"
+  proxied = true
+}
+
+resource "cloudflare_record" "domain_validation" {
+  zone_id = var.cloudflare_zone_id
+  name    = "barista"
+  value   = aws_cloudfront_distribution.cloudfront_distribution.domain_name
+  type    = "CNAME"
+  proxied = true
 }

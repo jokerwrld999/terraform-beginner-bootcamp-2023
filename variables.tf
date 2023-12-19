@@ -3,6 +3,18 @@ variable "region" {
   type        = string
 }
 
+variable "root_domain_name" {
+  description = "Root Domain Name"
+  type        = string
+  default = "jokerwrld.win"
+}
+
+variable "sub_domain_name" {
+  description = "Sub-Domain Name"
+  type        = string
+  default = "barista.jokerwrld.win"
+}
+
 variable "AWS_ACCESS_KEY_ID" {
   description = "AWS Access Key"
   type        = string
@@ -11,4 +23,19 @@ variable "AWS_ACCESS_KEY_ID" {
 variable "AWS_SECRET_ACCESS_KEY" {
   description = "AWS Secret Access Key"
   type        = string
+}
+
+variable "cloudflare_email" {
+  description = "Cloudflare Email"
+  type = string
+}
+
+variable "cloudflare_api_key" {
+  description = "Cloudflare Api Key"
+  type = string
+}
+
+variable "cloudflare_zone_id" {
+  description = "Cloudflare Zone ID"
+  type = string
 }
