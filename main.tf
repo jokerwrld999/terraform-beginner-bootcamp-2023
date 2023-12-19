@@ -1,30 +1,3 @@
-terraform {
-  cloud {
-    organization = "jokerwrld"
-
-    workspaces {
-      name = "terraform-bootcamp"
-    }
-  }
-
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.0"
-    }
-  }
-
-  required_version = ">= 1.5.0"
-}
-
-# AWS provider block
-
-provider "aws" {
-  region     = var.region
-  access_key = var.AWS_ACCESS_KEY_ID
-  secret_key = var.AWS_SECRET_ACCESS_KEY
-}
-
 # S3 static website bucket
 
 resource "aws_s3_bucket" "bootcamp_bucket" {
@@ -50,7 +23,6 @@ resource "aws_s3_bucket_versioning" "bootcamp_bucket_versioning" {
     status = "Enabled"
   }
 }
-
 
 # Upload website content
 
@@ -170,8 +142,4 @@ resource "aws_s3_bucket_policy" "bootcamp_bucket_policy" {
     ]
 }
 POLICY
-}
-
-output "website_url" {
-  value = "https://${aws_cloudfront_distribution.cloudfront_distribution.domain_name}"
 }
