@@ -1,5 +1,4 @@
 # S3 static website bucket
-
 resource "aws_s3_bucket" "bootcamp_bucket" {
   bucket = "${var.root_domain_name}"
 }
@@ -25,7 +24,6 @@ resource "aws_s3_bucket_versioning" "bootcamp_bucket_versioning" {
 }
 
 # Upload website content
-
 module "template_files" {
   source = "hashicorp/dir/template"
 
@@ -43,8 +41,30 @@ resource "aws_s3_object" "provision_source_files" {
   content = each.value.content
 }
 
-# CloudFront
+# Use the AWS Certificate Manager to create an SSL cert for our domain.
+resource "aws_acm_certificate" "certificate" {
+  domain_name       = "*.${var.root_domain_name}"
+  validation_method = "DNS"
 
+  subject_alternative_names = ["${var.root_domain_name}"]
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+# Create Validation Record on Cloudflare
+resource "cloudflare_record" "cloudflare_validation_record" {
+  zone_id = var.cloudflare_zone_id
+  name    = "${tolist(aws_acm_certificate.certificate.domain_validation_options)[0].resource_record_name}"
+  value   = "${tolist(aws_acm_certificate.certificate.domain_validation_options)[0].resource_record_value}"
+  type    = "CNAME"
+  proxied = false
+
+  depends_on = [ aws_acm_certificate.certificate ]
+}
+
+# CloudFront
 resource "aws_cloudfront_origin_access_control" "cloudfront_s3_oac" {
   name                              = "CloudFront S3 OAC"
   description                       = "Cloud Front S3 OAC"
@@ -58,16 +78,7 @@ resource "aws_cloudfront_origin_access_identity" "origin_access_identity" {
 }
 
 resource "aws_cloudfront_distribution" "cloudfront_distribution" {
-
   origin {
-    # custom_origin_config {
-    #   // These are all the defaults.
-    #   http_port              = "80"
-    #   https_port             = "443"
-    #   origin_protocol_policy = "http-only"
-    #   origin_ssl_protocols   = ["TLSv1", "TLSv1.1", "TLSv1.2"]
-    # }
-
     domain_name = aws_s3_bucket.bootcamp_bucket.bucket_regional_domain_name
     origin_id   = "${var.sub_domain_name}"
 
@@ -111,7 +122,6 @@ resource "aws_cloudfront_distribution" "cloudfront_distribution" {
 }
 
 # S3 bucket ACL access
-
 resource "aws_s3_bucket_ownership_controls" "bootcamp_bucket_ownership" {
   bucket = aws_s3_bucket.bootcamp_bucket.id
   rule {
@@ -127,7 +137,6 @@ resource "aws_s3_bucket_public_access_block" "bootcamp_bucket_access_block" {
 }
 
 # S3 bucket policy
-
 resource "aws_s3_bucket_policy" "bootcamp_bucket_policy" {
   bucket = aws_s3_bucket.bootcamp_bucket.id
 
@@ -154,29 +163,7 @@ resource "aws_s3_bucket_policy" "bootcamp_bucket_policy" {
 POLICY
 }
 
-// Use the AWS Certificate Manager to create an SSL cert for our domain.
-// This resource won't be created until you receive the email verifying you
-// own the domain and you click on the confirmation link.
-resource "aws_acm_certificate" "certificate" {
-  // We want a wildcard cert so we can host subdomains later.
-  domain_name       = "*.${var.root_domain_name}"
-  validation_method = "DNS"
-
-  // We also want the cert to be valid for the root domain even though we'll be
-  // redirecting to the www. domain immediately.
-  subject_alternative_names = ["${var.root_domain_name}"]
-}
-
-
-resource "cloudflare_record" "foo" {
-  zone_id = var.cloudflare_zone_id
-  name    = "barista"
-  value   = aws_cloudfront_distribution.cloudfront_distribution.domain_name
-  type    = "CNAME"
-  proxied = true
-}
-
-resource "cloudflare_record" "domain_validation" {
+resource "cloudflare_record" "cloudflare_record" {
   zone_id = var.cloudflare_zone_id
   name    = "barista"
   value   = aws_cloudfront_distribution.cloudfront_distribution.domain_name
