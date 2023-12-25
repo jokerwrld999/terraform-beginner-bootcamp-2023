@@ -18,4 +18,4 @@
   - Incremented for backward-compatible bug fixes or small improvements.
   - Indicates minor changes or bug fixes that do not affect the public API.
 
-[Documentation](https://docs.jokerwrld.win/posts/terraform-bootcamp/){: target="_blank"}
+[Documentation](https://docs.jokerwrld.win/posts/terraform-bootcamp/){:target="_blank" rel="noopener noreferrer"}
