@@ -1,3 +1,3 @@
 output "website_url" {
-  value = "https://${var.sub_domain_name}"
+  value = "https://${var.subdomain_name}.${var.root_domain_name}"
 }
