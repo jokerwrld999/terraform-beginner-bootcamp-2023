@@ -22,3 +22,8 @@ variable "cloudflare_zone_id" {
   description = "Cloudflare Zone ID"
   type        = string
 }
+
+variable "cloudfront_distribution_arn" {
+  description = "AWS CloudFront Distribution ARN"
+  type        = string
+}

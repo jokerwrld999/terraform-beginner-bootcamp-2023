@@ -22,3 +22,13 @@ variable "cloudflare_zone_id" {
   description = "Cloudflare Zone ID"
   type        = string
 }
+
+variable "bootcamp_bucket_id" {
+  description = "AWS S3 Bucket ID"
+  type        = string
+}
+
+variable "bucket_regional_domain_name" {
+  description = "AWS S3 Bucket Regional Domain Name"
+  type        = string
+}
